@@ -2,6 +2,7 @@
 require 'nokogiri'
 require 'open-uri'
 require 'fileutils'
+require 'colorize'
 
 MARK_FILE = "mark.dat"
 SITE = "http://it-ebooks.info"
@@ -13,9 +14,7 @@ def wait_for_threads(threads)
 end
 
 def quit(num, threads)
-  if threads.any?
-    wait_for_threads(threads)
-  end
+  wait_for_threads(threads) if threads.any?
   File.open(MARK_FILE, 'w') { |f| f.write(num - 1) }
   exit
 end
@@ -31,9 +30,8 @@ def exclude?(book)
 end
 
 def prompt(options = {})
-  puts
-  desc = options[:description] ? '/ d' : ''
-  print "y / [enter] #{desc} / q: ".squeeze
+  desc = options[:description] ? '/ Desciption (d)' : ''
+  print "\nDownload (y) / Skip (enter) #{desc} / Quit (q): ".squeeze
   input = STDIN.gets.chomp.downcase
   puts
   input
@@ -73,7 +71,8 @@ for num in (mark + 1).upto(latest)
     book[:link] = doc.css("a").find { |link| link['href'] =~ /filepi\.com/ }['href']
 
     if exclude?(book)
-      puts "Excluding #{num}: #{book[:title]} (#{book[:year]})"
+      print "Excluding #{num}: "
+      puts "#{book[:title]} (#{book[:year]})".cyan
     else
       puts "#{num} (#{num - mark}/#{latest - mark})"
       books << book
@@ -86,7 +85,7 @@ threads = []
 
 books.each_with_index do |book, index|
   puts "#{book[:num]} (#{index + 1}/#{books.count})"
-  puts book[:title]
+  puts book[:title].cyan
   puts book[:subtitle] unless book[:subtitle].empty?
   puts "#{book[:publisher]}, #{book[:year]}"
   input = prompt(description: true)
@@ -106,14 +105,13 @@ books.each_with_index do |book, index|
 
         cd = f.meta['content-disposition']
 
-        if cd.nil? # content-disposition was missing, try again
+        unless cd # content-disposition was missing, try again
           f = open(book[:link], "Referer" => SITE)
           cd = f.meta['content-disposition']
         end
 
         base = 'books'
         FileUtils.mkdir_p base
-
         filepath = File.join(base, cd.match(/filename=(\"?)(.+)\1/)[2])
 
         if File.exists?(filepath)
