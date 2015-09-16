@@ -70,9 +70,14 @@ for num in (mark + 1).upto(latest)
     book[:year] = doc.css("b[itemprop='datePublished']").text
     book[:link] = doc.css("a").find { |link| link['href'] =~ /filepi\.com/ }['href']
 
+    repost = doc.css("div[itemtype='http://schema.org/Book']").text.include?('repost')
+
     if exclude?(book)
       print "Excluding #{num}: "
       puts "#{book[:title]} (#{book[:year]})".cyan
+    elsif repost
+      print "Excluding #{num} (repost): "
+      puts "#{book[:title]} (#{book[:year]})".red
     else
       puts "#{num} (#{num - mark}/#{latest - mark})"
       books << book
