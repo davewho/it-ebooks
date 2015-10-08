@@ -117,7 +117,8 @@ books.each_with_index do |book, index|
 
         base = 'books'
         FileUtils.mkdir_p base
-        filepath = File.join(base, cd.match(/filename=(\"?)(.+)\1/)[2])
+        filename = cd.match(/filename=(\"?)(.+)\1/)[2].sub(/^books\//, '').gsub('/', ' - ')
+        filepath = File.join(base, filename)
 
         if File.exists?(filepath)
           puts "#{filepath} already exists!"
